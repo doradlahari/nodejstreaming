@@ -407,6 +407,18 @@
 //   }
 // });
 
+
+// VB, VBP, VBZ, VBG, and VBN are the Part-of-Speech (POS) tags assigned to verbs in the Penn Treebank POS tagging system.
+
+// VB: Base form verb (e.g. "run")
+// VBP: Present tense verb, not third person singular (e.g. "I run")
+// VBZ: Present tense verb, third person singular (e.g. "he runs")
+// VBG: Gerund or present participle verb (e.g. "running")
+// VBN: Past participle verb (e.g. "run")
+// In the code snippet you provided, these tags are used to map the original verb tags to their future tense form.
+
+
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const natural = require('natural');
