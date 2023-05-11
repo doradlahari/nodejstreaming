@@ -109,14 +109,85 @@ app.get("/", (req, res) => {
 
 
 
-const compromise = require('compromise');
-// Create a route for converting text to past, present, and future tense
-app.post('/convert', (req, res) => {
-  const sentence = req.body.text;
+// const compromise = require('compromise');
+// // Create a route for converting text to past, present, and future tense
+// app.post('/convert', (req, res) => {
+//   const sentence = req.body.text;
 
-  const past = compromise(sentence).toPastTense().text();
-  const present = compromise(sentence).text();
-  const future = compromise(sentence).toFutureTense().text();
+//   const past = compromise(sentence).toPastTense().text();
+//   const present = compromise(sentence).text();
+//   const future = compromise(sentence).toFutureTense().text();
 
-  res.json({ past: `I ${past}`, present: `I ${present}`, future: `I will ${future}` });
+//   res.json({ past: `I ${past}`, present: `I ${present}`, future: `I will ${future}` });
+// });\
+
+const natural = require('natural');
+const MongoClient = require('mongodb').MongoClient;
+const db = client.db(dbName);
+const collection = db.collection(collectionNamesecond);
+// MongoDB connection URL
+const url = "mongodb+srv://doradlahari:nlp@cluster0.0eg4uqv.mongodb.net/" ;
+
+// MongoDB database name
+const dbNamesecond = 'mydatabase';
+
+// MongoDB collection name for training data
+const collectionNamesecond = 'trainingData';
+
+// Define training data
+const trainingData = [
+  { text: 'I love Node.js', category: 'technology' },
+  { text: 'I hate spiders', category: 'animals' },
+  { text: 'I enjoy playing guitar', category: 'music' },
+  { text: 'I am afraid of heights', category: 'fears' },
+  { text: 'I love hiking in the mountains', category: 'nature' },
+];
+
+
+// Connect to MongoDB and insert training data
+MongoClient.connect(url,   dbNamesecond +
+      "?retryWrites=true&w=majority",
+    { useNewUrlParser: true, useUnifiedTopology: true }, (err, client) => {
+  if (err) {
+    console.error('Error connecting to MongoDB', err);
+    return;
+  }
+
+
+  // Insert training data into collection
+  collection.insertMany(trainingData, (err, result) => {
+    if (err) {
+      console.error('Error inserting training data into MongoDB', err);
+      client.close();
+      return;
+    }
+
+    console.log('Training data inserted into MongoDB:', result.insertedCount);
+
+    // Create classifier and train it with the training data
+    const classifier = new natural.BayesClassifier();
+    collection.find().toArray((err, documents) => {
+      if (err) {
+        console.error('Error retrieving training data from MongoDB', err);
+        client.close();
+        return;
+      }
+
+      documents.forEach(document => {
+        classifier.addDocument(document.text, document.category);
+      });
+
+      classifier.train();
+
+      // Define API endpoint for text classification
+      app.post('/classify', (req, res) => {
+        const textToClassify = req.body.text;
+        const category = classifier.classify(textToClassify);
+        res.json({ category });
+      });
+
+      console.log('Classifier trained with training data from MongoDB');
+      client.close();
+    });
+  });
 });
